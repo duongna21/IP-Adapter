@@ -78,6 +78,12 @@ class IPAdapterFaceID:
                     hidden_size=hidden_size, cross_attention_dim=cross_attention_dim, scale=1.0, rank=self.lora_rank, num_tokens=self.num_tokens,
                 ).to(self.device, dtype=torch.float16)
         unet.set_attn_processor(attn_procs)
+        if hasattr(self.pipe, "controlnet"):
+            if isinstance(self.pipe.controlnet, MultiControlNetModel):
+                for controlnet in self.pipe.controlnet.nets:
+                    controlnet.set_attn_processor(CNAttnProcessor(num_tokens=self.num_tokens))
+            else:
+                self.pipe.controlnet.set_attn_processor(CNAttnProcessor(num_tokens=self.num_tokens))
 
     def load_ip_adapter(self):
         if os.path.splitext(self.ip_ckpt)[-1] == ".safetensors":
